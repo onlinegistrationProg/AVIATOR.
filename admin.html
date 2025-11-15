@@ -3,182 +3,127 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aviator Admin</title>
-
+<title>Admin Panel</title>
 <style>
-    body { margin:0; background:#0D0D0F; font-family:Arial; color:white; }
-    header { background:#111; padding:18px; text-align:center; font-size:22px; color:#FF0033; }
-    .container { padding:20px; max-width:600px; margin:auto; }
-    input, button, textarea {
-        width:100%; padding:12px; margin-top:10px;
-        background:#1A1A1D; color:white; border:none; border-radius:6px;
-        font-size:16px;
-    }
-    button { background:#FF0033; cursor:pointer; font-weight:bold; }
-    button:hover { opacity:0.9; }
-    .section-title {
-        margin-top:30px;
-        padding-bottom:8px;
-        border-bottom:1px solid #333;
-        color:#FF0033;
-        font-size:18px;
-    }
-    #adminPanel { display:none; margin-top:20px; }
+body { margin:0; font-family: Arial, sans-serif; background:#0d0d0f; color:#fff;}
+header{background:#111; padding:10px; text-align:center; color:#ff0033; font-size:24px;}
+.container{padding:20px;}
+table{width:100%; border-collapse: collapse; margin-top:20px;}
+th,td{border:1px solid #fff; padding:8px; text-align:center;}
+th{background:#111;}
+button{padding:5px 10px; margin:2px; border:none; border-radius:5px; cursor:pointer;}
+.approve{background:#00ff33;}
+.block{background:#ff0033;}
+.logout{background:#ff0033; color:#fff; margin-top:20px; padding:10px 20px;}
 </style>
 </head>
-
 <body>
-
-<header>AVIATOR ADMIN PANEL</header>
-
+<header>Admin Panel</header>
 <div class="container">
 
-    <!-- LOGIN -->
-    <h3>Admin Login</h3>
-    <input type="text" id="adminUser" placeholder="Username">
-    <input type="password" id="adminPass" placeholder="Password">
-    <button onclick="loginAdmin()">Login</button>
+<h2>Players</h2>
+<table id="playersTable">
+  <tr>
+    <th>Phone</th><th>Password</th><th>Balance</th><th>Blocked</th><th>Actions</th>
+  </tr>
+</table>
 
-    <!-- ADMIN PANEL -->
-    <div id="adminPanel">
+<h2>Deposit Requests</h2>
+<table id="depositsTable">
+  <tr>
+    <th>Phone</th><th>Amount</th><th>Status</th><th>Action</th>
+  </tr>
+</table>
 
-        <!-- PLAYER LOGIN CONTROL -->
-        <h3 class="section-title">Player Login Control</h3>
-        <input type="text" id="playerUser" placeholder="Player Username">
-        <input type="text" id="playerPass" placeholder="Player Password">
-        <button onclick="savePlayerLogin()">Save Player Login</button>
+<h2>Daily Rounds</h2>
+<table id="roundsTable">
+  <tr>
+    <th>Round</th><th>Crash ×</th><th>Start Time</th><th>Player Stakes</th>
+  </tr>
+</table>
 
-        <!-- PLAYER BALANCE CONTROL -->
-        <h3 class="section-title">Player Balance</h3>
-        <input type="number" id="playerBalance" placeholder="Set Player Balance">
-        <button onclick="saveBalance()">Update Balance</button>
-        <button onclick="resetPlayer()">Reset Player</button>
-
-        <!-- FORCE NEXT MULTIPLIER -->
-        <h3 class="section-title">Force Next Multiplier</h3>
-        <input type="text" id="forceMultiplier" placeholder="Example: 1, 2.5, 50">
-        <button onclick="saveForcedMultiplier()">Apply Forced Multiplier</button>
-
-        <!-- DAILY OUTCOMES -->
-        <h3 class="section-title">Daily Outcomes (Pre-Results)</h3>
-        <button onclick="generateOutcomes()">Auto Generate Outcomes</button>
-        <textarea id="outcomeList" rows="6" placeholder="Edit outcomes manually..."></textarea>
-        <button onclick="saveOutcomes()">Save Outcomes</button>
-
-        <!-- DEPOSIT CODE -->
-        <h3 class="section-title">Player Deposit Code</h3>
-        <div id="depositBox" style="padding:12px;background:#1A1A1D;border-radius:6px;font-size:20px;text-align:center;">
-            Code: <span id="depositCode">------</span><br>
-            <small style="color:#aaa;">Next change in <span id="timer">60</span>s</small>
-        </div>
-
-    </div>
+<button class="logout" onclick="logout()">Logout</button>
 </div>
 
 <script>
-// ===================== ADMIN LOGIN ===================== //
-function loginAdmin() {
-    const u = document.getElementById("adminUser").value;
-    const p = document.getElementById("adminPass").value;
+let players = JSON.parse(localStorage.getItem("players") || "[]");
+let deposits = JSON.parse(localStorage.getItem("deposits") || "[]");
+let rounds = JSON.parse(localStorage.getItem("dailyRounds") || "[]");
 
-    if (u === "Kibet Riskid" && p === "Kwenik254$") {
-        document.getElementById("adminPanel").style.display = "block";
-        alert("Admin Logged In Successfully");
-        startDepositSystem();
-        attachManualDepositRefresh();
-    } else {
-        alert("Incorrect Login");
-    }
+function renderPlayers() {
+  const table = document.getElementById("playersTable");
+  table.innerHTML = `<tr><th>Phone</th><th>Password</th><th>Balance</th><th>Blocked</th><th>Actions</th></tr>`;
+  players.forEach((p, i) => {
+    let row = table.insertRow();
+    row.insertCell(0).textContent = p.phone;
+    row.insertCell(1).textContent = p.password;
+    row.insertCell(2).textContent = p.balance.toFixed(2);
+    row.insertCell(3).textContent = p.blocked ? "Yes" : "No";
+    let actions = row.insertCell(4);
+    let blockBtn = document.createElement("button");
+    blockBtn.textContent = p.blocked ? "Unblock" : "Block";
+    blockBtn.className = "block";
+    blockBtn.onclick = () => toggleBlock(i);
+    actions.appendChild(blockBtn);
+  });
 }
 
-// ===================== PLAYER LOGIN CONTROL ===================== //
-function savePlayerLogin() {
-    localStorage.setItem("player_username", document.getElementById("playerUser").value);
-    localStorage.setItem("player_password", document.getElementById("playerPass").value);
-    alert("Player Login Saved");
+function toggleBlock(i) {
+  players[i].blocked = !players[i].blocked;
+  localStorage.setItem("players", JSON.stringify(players));
+  renderPlayers();
 }
 
-// ===================== PLAYER BALANCE ===================== //
-function saveBalance() {
-    let bal = document.getElementById("playerBalance").value;
-    localStorage.setItem("player_balance", bal);
-    alert("Balance Updated");
+function renderDeposits() {
+  const table = document.getElementById("depositsTable");
+  table.innerHTML = `<tr><th>Phone</th><th>Amount</th><th>Status</th><th>Action</th></tr>`;
+  deposits.forEach((d,i)=>{
+    let row = table.insertRow();
+    row.insertCell(0).textContent=d.phone;
+    row.insertCell(1).textContent=d.amount;
+    row.insertCell(2).textContent=d.status;
+    let actionCell = row.insertCell(3);
+    if(d.status==="pending") {
+      let approveBtn=document.createElement("button");
+      approveBtn.textContent="Approve";
+      approveBtn.className="approve";
+      approveBtn.onclick = ()=> approveDeposit(i);
+      actionCell.appendChild(approveBtn);
+    } else { actionCell.textContent="-"; }
+  });
 }
 
-function resetPlayer() {
-    localStorage.removeItem("player_balance");
-    localStorage.removeItem("player_username");
-    localStorage.removeItem("player_password");
-    alert("Player Reset Complete");
+function approveDeposit(i) {
+  deposits[i].status="approved";
+  let playerIndex = players.findIndex(p=>p.phone===deposits[i].phone);
+  if(playerIndex>-1) players[playerIndex].balance += deposits[i].amount;
+  localStorage.setItem("players", JSON.stringify(players));
+  localStorage.setItem("deposits", JSON.stringify(deposits));
+  renderPlayers();
+  renderDeposits();
 }
 
-// ===================== FORCE NEXT MULTIPLIER ===================== //
-function saveForcedMultiplier() {
-    localStorage.setItem("forced_multiplier", document.getElementById("forceMultiplier").value);
-    alert("Next Multiplier Forced Successfully");
+function renderRounds() {
+  const table = document.getElementById("roundsTable");
+  table.innerHTML = `<tr><th>Round</th><th>Crash ×</th><th>Start Time</th><th>Player Stakes</th></tr>`;
+  rounds.forEach(r=>{
+    let row = table.insertRow();
+    row.insertCell(0).textContent = r.round;
+    row.insertCell(1).textContent = r.crash;
+    row.insertCell(2).textContent = r.startTime;
+    let stakes = r.stakes.map(s=>`${s.phone}: ${s.amount} (${s.cashedOut===false?"lost":"cashed"})`).join(", ");
+    row.insertCell(3).textContent = stakes;
+  });
 }
 
-// ===================== DAILY OUTCOMES ===================== //
-function generateOutcomes() {
-    let list = [];
-    for (let i = 0; i < 20; i++) {
-        let r = (Math.random() * 50 + 1).toFixed(2);
-        list.push("x" + r);
-    }
-    document.getElementById("outcomeList").value = list.join("\n");
-    alert("New Outcomes Generated");
+function logout() {
+  localStorage.removeItem("loggedIn");
+  window.location.href="index.html";
 }
 
-function saveOutcomes() {
-    let outcomes = document.getElementById("outcomeList").value;
-    localStorage.setItem("daily_outcomes", outcomes);
-    alert("Outcomes Saved");
-}
-
-// ===================== AUTO + MANUAL DEPOSIT CODE ===================== //
-
-let depositTimer = 60;
-let timerInterval;
-
-// Generate a 6-digit random code
-function generateDepositCode() {
-    let code = Math.floor(100000 + Math.random() * 900000);
-    localStorage.setItem("deposit_code", code);
-    document.getElementById("depositCode").innerText = code;
-}
-
-// Start the auto timer
-function startDepositTimer() {
-    clearInterval(timerInterval);
-    depositTimer = 60;
-
-    timerInterval = setInterval(() => {
-        depositTimer--;
-        document.getElementById("timer").innerText = depositTimer;
-
-        if (depositTimer <= 0) {
-            generateDepositCode();
-            depositTimer = 60;
-        }
-    }, 1000);
-}
-
-function startDepositSystem() {
-    generateDepositCode();
-    startDepositTimer();
-}
-
-// Manual change on ANY button press
-function attachManualDepositRefresh() {
-    const buttons = document.querySelectorAll("button");
-    buttons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            generateDepositCode();  
-            startDepositTimer();     
-        });
-    });
-}
+renderPlayers();
+renderDeposits();
+renderRounds();
 </script>
-
 </body>
 </html>
