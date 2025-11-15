@@ -1,203 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aviator Admin</title>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Aviator — Admin</title>
 <style>
-body{margin:0;font-family:Arial,sans-serif;background:#0D0D0F;color:#fff;}
-.container{width:90%;max-width:1200px;margin:50px auto;padding:20px;background:#111;border-radius:10px;}
-input,button{padding:6px;margin:3px;border-radius:5px;border:none;}
-button{cursor:pointer;}
-table{width:100%;border-collapse:collapse;margin-top:15px;}
-th,td{border:1px solid #444;padding:6px;text-align:center;}
-th{background:#222;}
-.editField{width:80px;text-align:center;}
-.approveBtn{background:#28a745;color:#fff;margin-right:5px;}
-.declineBtn{background:#ff0033;color:#fff;}
+  body{margin:0;background:#0d0d0f;color:#fff;font-family:Arial,Helvetica,sans-serif}
+  .wrap{max-width:900px;margin:14px auto;padding:12px}
+  header{display:flex;align-items:center;justify-content:space-between}
+  h2{color:#ff3344}
+  .panel{background:#111;padding:12px;border-radius:10px;margin-top:12px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px;border-bottom:1px solid #222;text-align:left}
+  button{padding:8px 12px;border-radius:8px;border:none;background:#1e90ff;color:#fff;cursor:pointer}
+  .red{background:#ff5555}
+  .green{background:#25b24a}
+  .codebox{font-weight:700;font-size:20px;padding:8px 12px;background:#0b0b0c;border-radius:8px;display:inline-block}
 </style>
 </head>
 <body>
+<div class="wrap">
+  <header>
+    <h2>Aviator Admin</h2>
+    <div>
+      Current code: <span id="code" class="codebox">000000</span>
+      <button id="regen">Change Now</button>
+    </div>
+  </header>
 
-<div class="container" id="loginDiv">
-<h1>Aviator Admin Login</h1>
-<input type="text" id="adminPhone" placeholder="Phone Number"><br>
-<input type="password" id="adminPass" placeholder="Password"><br>
-<button onclick="adminLogin()">Login</button>
-<div id="loginError" style="color:#ff0033;margin-top:10px;"></div>
-</div>
+  <div class="panel">
+    <h3>Auto 6-digit code (changes every 60s)</h3>
+    <p class="muted">Press "Change Now" to force immediate change. This code can be shown to staff; it's not a security critical secret here.</p>
+  </div>
 
-<div class="container" id="adminPanel" style="display:none;">
-<h1>Aviator Admin Panel</h1>
+  <div class="panel">
+    <h3>Deposit Queue</h3>
+    <table>
+      <thead><tr><th>Phone</th><th>Amount</th><th>Note</th><th>Action</th></tr></thead>
+      <tbody id="dq"></tbody>
+    </table>
+    <div style="margin-top:10px">
+      <input id="dqPhone" placeholder="Phone" style="padding:8px;border-radius:6px;border:none;margin-right:6px"/>
+      <input id="dqAmt" placeholder="Amount" type="number" style="padding:8px;border-radius:6px;border:none;margin-right:6px"/>
+      <button id="addDeposit">Add Deposit</button>
+    </div>
+  </div>
 
-<!-- Deposit Management -->
-<h2>Deposit Requests</h2>
-<table id="depositTable">
-<thead><tr><th>Player</th><th>Amount</th><th>Action</th></tr></thead>
-<tbody></tbody>
-</table>
+  <div class="panel">
+    <h3>Rounds Control</h3>
+    <p>Regenerate today's rounds (will replace todays sequence for everyone).</p>
+    <button id="regenRounds" class="red">Regenerate Today's Rounds</button>
+  </div>
 
-<!-- Player Management -->
-<h2>Player Management</h2>
-<table id="playerTable">
-<thead><tr><th>Phone</th><th>Password</th><th>Balance</th><th>Action</th></tr></thead>
-<tbody></tbody>
-</table>
-
-<!-- Future Multipliers -->
-<h2>Future Multipliers (Next 24 Hours)</h2>
-<label>Interval (seconds): <input id="intervalInput" type="number" value="60" min="1"></label>
-<button onclick="generatePreciseMultipliers()">Generate Multipliers</button>
-<table id="multiplierTable">
-<thead><tr><th>Time</th><th>Multiplier</th><th>Action</th></tr></thead>
-<tbody></tbody>
-</table>
+  <div class="panel">
+    <h3>Quick User Lookup</h3>
+    <input id="lookupPhone" placeholder="Phone" style="padding:8px;border-radius:6px;border:none"/>
+    <button id="lookupBtn">Lookup</button>
+    <div id="lookupRes" style="margin-top:10px"></div>
+  </div>
 </div>
 
 <script>
-// ----- Admin Login -----
-const adminCred = { phone:"Kibet Risk", password:"Kwenik254$" };
-
-function adminLogin(){
-  const phone = document.getElementById('adminPhone').value.trim();
-  const pass = document.getElementById('adminPass').value.trim();
-  
-  if(phone === adminCred.phone && pass === adminCred.password){
-    document.getElementById('loginDiv').style.display='none';
-    document.getElementById('adminPanel').style.display='block';
-
-    // FIXED: Load saved multipliers immediately after login
-    loadSavedMultipliers();
-    loadPlayers();
-    loadDeposits();
-    loadMultipliers();
-  } 
-  else { 
-    document.getElementById('loginError').textContent="Invalid credentials!"; 
+  // admin page logic
+  const codeEl = document.getElementById('code')
+  const regenBtn = document.getElementById('regen')
+  function gen6(){ return Math.floor(100000 + Math.random()*900000).toString() }
+  function setCode(c){ codeEl.textContent = c }
+  function autoTick(){
+    const c = gen6(); localStorage.setItem('aviator_admin_code', c); setCode(c)
   }
-}
+  // auto change every 60s
+  autoTick()
+  setInterval(autoTick, 60000)
+  regenBtn.addEventListener('click', autoTick)
 
-// ----- Dummy Players -----
-let players=[
-  {phone:"Riskid Kibet",password:"Kwenik254$",balance:500},
-  {phone:"Player2",password:"pass123",balance:200}
-];
-
-// ----- Deposit Requests -----
-let deposits=[
-  {player:"Riskid Kibet",amount:100},
-  {player:"Player2",amount:50}
-];
-
-// Load deposit table
-function loadDeposits(){
-  const tbody=document.querySelector("#depositTable tbody"); tbody.innerHTML="";
-  deposits.forEach((d,i)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${d.player}</td><td>${d.amount.toFixed(2)}</td>
-                  <td><button class="approveBtn" onclick="approveDeposit(${i})">Approve</button>
-                  <button class="declineBtn" onclick="declineDeposit(${i})">Decline</button></td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-function approveDeposit(i){
-  const d=deposits[i];
-  const player=players.find(p=>p.phone===d.player); 
-  if(player) player.balance+=d.amount;
-
-  deposits.splice(i,1); 
-  loadDeposits(); 
-  loadPlayers();
-  alert("Deposit approved for "+d.player);
-}
-
-function declineDeposit(i){
-  deposits.splice(i,1); 
-  loadDeposits(); 
-  alert("Deposit declined.");
-}
-
-// Load player table
-function loadPlayers(){
-  const tbody=document.querySelector("#playerTable tbody"); tbody.innerHTML="";
-  players.forEach((p,i)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td><input class="editField" value="${p.phone}" onchange="updatePlayer(${i},'phone',this.value)"></td>
-                  <td><input class="editField" value="${p.password}" onchange="updatePlayer(${i},'password',this.value)"></td>
-                  <td><input class="editField" value="${p.balance}" type="number" onchange="updatePlayer(${i},'balance',this.value)"></td>
-                  <td><button onclick="removePlayer(${i})">Remove</button></td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-function updatePlayer(i,field,value){ 
-  if(field==='balance') value=parseFloat(value); 
-  players[i][field]=value; 
-}
-
-function removePlayer(i){
-  if(confirm("Remove player "+players[i].phone+"?")){
-    players.splice(i,1); 
-    loadPlayers(); 
+  // deposit queue
+  const dqT = document.getElementById('dq')
+  function renderDQ(){
+    const q = JSON.parse(localStorage.getItem('aviator_deposits')||'[]')
+    dqT.innerHTML = ''
+    q.forEach((it,idx)=>{
+      const tr = document.createElement('tr')
+      tr.innerHTML = `<td>${it.phone}</td><td>${it.amount}</td><td>${it.note||''}</td>
+        <td>
+          <button onclick="approve(${idx})" class="green">Approve</button>
+          <button onclick="decline(${idx})" class="red">Decline</button>
+        </td>`
+      dqT.appendChild(tr)
+    })
   }
-}
-
-// ----- 24-Hour Multipliers -----
-// IMPORTANT FIX: multipliers load from storage
-let multipliers=[];
-
-function loadSavedMultipliers(){
-  const saved = localStorage.getItem('futureMultipliers');
-  if(saved){
-    multipliers = JSON.parse(saved);
+  window.approve = function(i){
+    const q = JSON.parse(localStorage.getItem('aviator_deposits')||'[]')
+    const it = q[i]
+    if(!it) return alert('Not found')
+    // add to user's balance automatically (if user exists)
+    const users = JSON.parse(localStorage.getItem('aviator_users')||'{}')
+    if(users[it.phone]) users[it.phone].balance = (users[it.phone].balance||0) + Number(it.amount)
+    else {
+      // create user with deposit as balance (no password)
+      users[it.phone] = {password:'', balance: Number(it.amount)}
+    }
+    localStorage.setItem('aviator_users', JSON.stringify(users))
+    // remove deposit
+    q.splice(i,1)
+    localStorage.setItem('aviator_deposits', JSON.stringify(q))
+    renderDQ()
+    alert('Approved and balance updated')
   }
-}
-
-function generatePreciseMultipliers(){
-  multipliers=[];
-  const now=new Date();
-  const intervalSec=parseInt(document.getElementById('intervalInput').value)||60;
-  const totalSeconds=24*60*60;
-
-  for(let i=0;i<totalSeconds;i+=intervalSec){
-    const futureTime=new Date(now.getTime()+i*1000);
-    const timeStr=futureTime.getHours().toString().padStart(2,'0')+":"
-                 +futureTime.getMinutes().toString().padStart(2,'0')+":"
-                 +futureTime.getSeconds().toString().padStart(2,'0');
-
-    multipliers.push({
-      time:timeStr,
-      multiplier:+(Math.random()*5+1).toFixed(2)
-    });
+  window.decline = function(i){
+    const q = JSON.parse(localStorage.getItem('aviator_deposits')||'[]')
+    q.splice(i,1)
+    localStorage.setItem('aviator_deposits', JSON.stringify(q))
+    renderDQ()
   }
+  document.getElementById('addDeposit').addEventListener('click', ()=>{
+    const phone = document.getElementById('dqPhone').value.trim()
+    const amount = Number(document.getElementById('dqAmt').value)
+    if(!phone||!amount) return alert('Fill fields')
+    const q = JSON.parse(localStorage.getItem('aviator_deposits')||'[]')
+    q.push({phone,amount,note:'manual'})
+    localStorage.setItem('aviator_deposits', JSON.stringify(q))
+    renderDQ()
+    document.getElementById('dqPhone').value=''; document.getElementById('dqAmt').value=''
+  })
 
-  localStorage.setItem('futureMultipliers',JSON.stringify(multipliers));
-  loadMultipliers();
-}
+  // regenerate today's rounds (admin control)
+  document.getElementById('regenRounds').addEventListener('click', ()=>{
+    const keyPrefix = 'aviator_rounds_'
+    // delete today's rounds
+    const d = new Date(); const key = d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()
+    localStorage.removeItem(keyPrefix+key)
+    alert('Today\'s rounds removed. They will be regenerated when player loads player.html')
+  })
 
-function loadMultipliers(){
-  const tbody=document.querySelector("#multiplierTable tbody"); tbody.innerHTML="";
-  multipliers.forEach((m,i)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${m.time}</td>
-                  <td><input class="editField" value="${m.multiplier}" step="0.01" onchange="updateMultiplier(${i},this.value)"></td>
-                  <td><button onclick="removeMultiplier(${i})">Remove</button></td>`;
-    tbody.appendChild(tr);
-  });
-}
+  // lookup
+  document.getElementById('lookupBtn').addEventListener('click', ()=>{
+    const phone = document.getElementById('lookupPhone').value.trim()
+    const users = JSON.parse(localStorage.getItem('aviator_users')||'{}')
+    const out = document.getElementById('lookupRes')
+    if(!phone) return out.textContent='Enter phone'
+    if(users[phone]) out.innerHTML = `<pre>${JSON.stringify(users[phone],null,2)}</pre>`
+    else out.textContent = 'User not found'
+  })
 
-function updateMultiplier(i,value){
-  multipliers[i].multiplier=parseFloat(value);
-  localStorage.setItem('futureMultipliers',JSON.stringify(multipliers));
-}
-
-function removeMultiplier(i){
-  multipliers.splice(i,1);
-  localStorage.setItem('futureMultipliers',JSON.stringify(multipliers));
-  loadMultipliers();
-}
+  // initial renders
+  renderDQ()
+  // load saved code if any
+  const savedCode = localStorage.getItem('aviator_admin_code'); if(savedCode) setCode(savedCode)
 </script>
-
 </body>
 </html>
