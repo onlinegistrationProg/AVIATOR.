@@ -1,108 +1,104 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Aviator - Player Panel</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviator Login</title>
 <style>
- body { font-family: Arial, sans-serif; background: #0d0d0f; color: #fff; margin: 0; padding: 0; }
- header { padding: 15px; text-align: center; background: #111; font-size: 20px; color: #ff0033; }
- .container { padding: 20px; }
- input, button { padding: 10px; margin: 5px 0; width: 100%; border-radius: 5px; }
- button { cursor: pointer; background: #ff0033; color: #fff; border: none; font-size: 16px; }
- #aviator-canvas { width: 100%; height: 200px; background: #000; border: 1px solid #fff; margin-top: 15px; }
- #message { margin-top: 10px; font-size: 16px; color: #0f0; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0d0d0f;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.login-box {
+  background: #111;
+  padding: 30px;
+  border-radius: 10px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 0 15px #ff0033;
+}
+.login-box h2 {
+  margin-bottom: 20px;
+  color: #ff0033;
+}
+.login-box input {
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+  border: none;
+}
+.login-box button {
+  width: 95%;
+  padding: 10px;
+  background: #ff0033;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.login-box button:hover {
+  background: #e60029;
+}
+.error {
+  color: #ff0033;
+  margin-top: 10px;
+}
 </style>
 </head>
 <body>
-<header>AVIATOR</header>
-<div class="container">
-<h2>Player Panel</h2>
-<div><b>Balance:</b> <span id="balance">0.00</span></div><h3>Deposit</h3>
-<input type="number" id="deposit-amount" placeholder="Deposit Amount" />
-<input type="text" id="deposit-code" placeholder="Admin Code" />
-<button onclick="deposit()">Deposit</button><h3>Stake</h3>
-<input type="number" id="stake-amount" placeholder="Stake Amount" />
-<button onclick="startRound()">Start</button><canvas id="aviator-canvas"></canvas>
+<div class="login-box">
+  <h2>Aviator Login</h2>
+  <input type="text" id="phone" placeholder="Phone Number">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <p class="error" id="error"></p>
+</div>
 
-<div><b>Multiplier:</b> <span id="current-multiplier">1.00</span></div>
-<button onclick="cashOut()">Cash Out</button>
-<div id="message"></div>
-</div><script>
-// ---- STORAGE ----
-let players = JSON.parse(localStorage.getItem('players') || '{}');
-let dailyRounds = JSON.parse(localStorage.getItem('dailyRounds') || '[]');
-let depositCode;
+<script>
+// Admin credentials
+const adminUser = "Riskid Kibet";
+const adminPass = "Kwenik254$";
 
-// ---- BALANCE ----
-function updateBalanceDisplay() {
- let p = 'player1';
- if (!players[p]) players[p] = { balance: 0, frozen: false };
- document.getElementById('balance').innerText = players[p].balance.toFixed(2);
- localStorage.setItem('players', JSON.stringify(players));
+// Auto redirect if logged in
+if(localStorage.getItem("loggedIn") === "player") window.location.href = "game.html";
+if(localStorage.getItem("loggedIn") === "admin") window.location.href = "admin.html";
+
+function login() {
+  const phone = document.getElementById("phone").value.trim();
+  const pass = document.getElementById("password").value.trim();
+  const error = document.getElementById("error");
+
+  if(phone === "" || pass === "") { error.textContent = "All fields required"; return; }
+
+  // Admin login
+  if(phone === adminUser && pass === adminPass) {
+    localStorage.setItem("loggedIn","admin");
+    window.location.href = "admin.html";
+    return;
+  }
+
+  // Player login
+  let players = JSON.parse(localStorage.getItem("players") || "[]");
+  let player = players.find(p => p.phone === phone && p.password === pass);
+  if(!player) {
+    player = { phone, password: pass, balance: 1000, blocked: false };
+    players.push(player);
+    localStorage.setItem("players", JSON.stringify(players));
+  }
+  if(player.blocked) { error.textContent = "You are blocked by admin"; return; }
+
+  localStorage.setItem("currentPlayer", JSON.stringify(player));
+  localStorage.setItem("loggedIn","player");
+  window.location.href="game.html";
 }
-
-// ---- DEPOSIT ----
-function deposit() {
- let amount = parseFloat(document.getElementById('deposit-amount').value);
- let codeEntered = document.getElementById('deposit-code').value.trim();
- let adminCode = localStorage.getItem('dynamicDepositCode');
- if (codeEntered !== adminCode) return alert("Incorrect code!");
- if (amount <= 0) return alert("Invalid amount");
- players['player1'].balance += amount;
- updateBalanceDisplay();
- alert("Deposit successful!");
-}
-
-// ---- GAME ----
-let currentMultiplier = 1;
-let intervalId;
-let cashoutDone = false;
-
-function startRound() {
- let stake = parseFloat(document.getElementById('stake-amount').value);
- let p = players['player1'];
- if (p.frozen) return alert("Account frozen");
- if (!stake || stake <= 0) return alert("Invalid stake");
- if (stake > p.balance) return alert("Insufficient balance");
- p.balance -= stake;
- updateBalanceDisplay();
- cashoutDone = false;
-
- let burst = getCurrentBurst();
-
- currentMultiplier = 1;
- document.getElementById('current-multiplier').innerText = currentMultiplier.toFixed(2);
- document.getElementById('message').innerText = "";
-
- intervalId = setInterval(() => {
-   currentMultiplier += 0.03;
-   document.getElementById('current-multiplier').innerText = currentMultiplier.toFixed(2);
-   if (currentMultiplier >= burst) {
-     clearInterval(intervalId);
-     if (!cashoutDone) document.getElementById('message').innerText = "💥 Burst at ×" + burst;
-   }
- }, 100);
-}
-
-function getCurrentBurst() {
- let now = new Date();
- let key = now.getHours() + ':' + now.getMinutes();
- let found = dailyRounds.find(r => r.time === key);
- return found ? found.burst : 2.0;
-}
-
-function cashOut() {
- if (cashoutDone) return;
- cashoutDone = true;
- let stake = parseFloat(document.getElementById('stake-amount').value);
- let earned = stake * currentMultiplier;
- players['player1'].balance += earned;
- updateBalanceDisplay();
- document.getElementById('message').innerText = "Cashed ×" + currentMultiplier.toFixed(2) + " → " + earned.toFixed(2);
- clearInterval(intervalId);
-}
-
-// ---- INIT ----
-updateBalanceDisplay();
-</script></body>
+</script>
+</body>
 </html>
