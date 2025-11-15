@@ -57,20 +57,37 @@ th{background:#222;}
 <script>
 // ----- Admin Login -----
 const adminCred = { phone:"Kibet Risk", password:"Kwenik254$" };
+
 function adminLogin(){
   const phone = document.getElementById('adminPhone').value.trim();
   const pass = document.getElementById('adminPass').value.trim();
+  
   if(phone === adminCred.phone && pass === adminCred.password){
     document.getElementById('loginDiv').style.display='none';
     document.getElementById('adminPanel').style.display='block';
-    loadPlayers(); loadDeposits(); loadMultipliers();
-  } else { document.getElementById('loginError').textContent="Invalid credentials!"; }
+
+    // FIXED: Load saved multipliers immediately after login
+    loadSavedMultipliers();
+    loadPlayers();
+    loadDeposits();
+    loadMultipliers();
+  } 
+  else { 
+    document.getElementById('loginError').textContent="Invalid credentials!"; 
+  }
 }
 
 // ----- Dummy Players -----
-let players=[{phone:"Riskid Kibet",password:"Kwenik254$",balance:500},{phone:"Player2",password:"pass123",balance:200}];
+let players=[
+  {phone:"Riskid Kibet",password:"Kwenik254$",balance:500},
+  {phone:"Player2",password:"pass123",balance:200}
+];
+
 // ----- Deposit Requests -----
-let deposits=[{player:"Riskid Kibet",amount:100},{player:"Player2",amount:50}];
+let deposits=[
+  {player:"Riskid Kibet",amount:100},
+  {player:"Player2",amount:50}
+];
 
 // Load deposit table
 function loadDeposits(){
@@ -86,11 +103,20 @@ function loadDeposits(){
 
 function approveDeposit(i){
   const d=deposits[i];
-  const player=players.find(p=>p.phone===d.player); if(player) player.balance+=d.amount;
-  deposits.splice(i,1); loadDeposits(); loadPlayers();
+  const player=players.find(p=>p.phone===d.player); 
+  if(player) player.balance+=d.amount;
+
+  deposits.splice(i,1); 
+  loadDeposits(); 
+  loadPlayers();
   alert("Deposit approved for "+d.player);
 }
-function declineDeposit(i){ deposits.splice(i,1); loadDeposits(); alert("Deposit declined."); }
+
+function declineDeposit(i){
+  deposits.splice(i,1); 
+  loadDeposits(); 
+  alert("Deposit declined.");
+}
 
 // Load player table
 function loadPlayers(){
@@ -104,34 +130,74 @@ function loadPlayers(){
     tbody.appendChild(tr);
   });
 }
-function updatePlayer(i,field,value){ if(field==='balance') value=parseFloat(value); players[i][field]=value; }
-function removePlayer(i){ if(confirm("Remove player "+players[i].phone+"?")){ players.splice(i,1); loadPlayers(); } }
 
-// ----- 24-Hour Multipliers Precise -----
+function updatePlayer(i,field,value){ 
+  if(field==='balance') value=parseFloat(value); 
+  players[i][field]=value; 
+}
+
+function removePlayer(i){
+  if(confirm("Remove player "+players[i].phone+"?")){
+    players.splice(i,1); 
+    loadPlayers(); 
+  }
+}
+
+// ----- 24-Hour Multipliers -----
+// IMPORTANT FIX: multipliers load from storage
 let multipliers=[];
+
+function loadSavedMultipliers(){
+  const saved = localStorage.getItem('futureMultipliers');
+  if(saved){
+    multipliers = JSON.parse(saved);
+  }
+}
+
 function generatePreciseMultipliers(){
-  multipliers=[]; const now=new Date(); const intervalSec=parseInt(document.getElementById('intervalInput').value)||60;
+  multipliers=[];
+  const now=new Date();
+  const intervalSec=parseInt(document.getElementById('intervalInput').value)||60;
   const totalSeconds=24*60*60;
+
   for(let i=0;i<totalSeconds;i+=intervalSec){
     const futureTime=new Date(now.getTime()+i*1000);
-    const timeStr=futureTime.getHours().toString().padStart(2,'0')+":"+futureTime.getMinutes().toString().padStart(2,'0')+":"+futureTime.getSeconds().toString().padStart(2,'0');
-    multipliers.push({time:timeStr,multiplier:+(Math.random()*5+1).toFixed(2)});
+    const timeStr=futureTime.getHours().toString().padStart(2,'0')+":"
+                 +futureTime.getMinutes().toString().padStart(2,'0')+":"
+                 +futureTime.getSeconds().toString().padStart(2,'0');
+
+    multipliers.push({
+      time:timeStr,
+      multiplier:+(Math.random()*5+1).toFixed(2)
+    });
   }
+
   localStorage.setItem('futureMultipliers',JSON.stringify(multipliers));
   loadMultipliers();
 }
+
 function loadMultipliers(){
   const tbody=document.querySelector("#multiplierTable tbody"); tbody.innerHTML="";
   multipliers.forEach((m,i)=>{
     const tr=document.createElement('tr');
     tr.innerHTML=`<td>${m.time}</td>
-                  <td><input class="editField" value="${m.multiplier}" step="0.01" min="1" max="100" onchange="updateMultiplier(${i},this.value)"></td>
+                  <td><input class="editField" value="${m.multiplier}" step="0.01" onchange="updateMultiplier(${i},this.value)"></td>
                   <td><button onclick="removeMultiplier(${i})">Remove</button></td>`;
     tbody.appendChild(tr);
   });
 }
-function updateMultiplier(i,value){ multipliers[i].multiplier=parseFloat(value); localStorage.setItem('futureMultipliers',JSON.stringify(multipliers)); }
-function removeMultiplier(i){ multipliers.splice(i,1); localStorage.setItem('futureMultipliers',JSON.stringify(multipliers)); loadMultipliers(); }
+
+function updateMultiplier(i,value){
+  multipliers[i].multiplier=parseFloat(value);
+  localStorage.setItem('futureMultipliers',JSON.stringify(multipliers));
+}
+
+function removeMultiplier(i){
+  multipliers.splice(i,1);
+  localStorage.setItem('futureMultipliers',JSON.stringify(multipliers));
+  loadMultipliers();
+}
 </script>
+
 </body>
 </html>
