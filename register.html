@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aviator — Register</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#0d0d0f;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;}
+.container{background:#111;padding:24px;border-radius:12px;width:300px;}
+input{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:none;}
+button{width:100%;padding:10px;margin-top:8px;border:none;border-radius:8px;background:#10b981;color:#fff;cursor:pointer;}
+a{color:#0ea5e9;text-decoration:none;font-size:14px;}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Register</h2>
+<input type="text" id="phone" placeholder="Phone number">
+<input type="password" id="password" placeholder="Password">
+<button id="registerBtn">Register</button>
+<p>Already have an account? <a href="login.html">Login here</a></p>
+<div id="msg" style="color:#ef4444;font-size:13px"></div>
+</div>
+
+<script>
+const GITHUB_API = 'https://api.github.com/repos/onlinegistrationProg/AviatorDB/contents/players.json';
+const RAW = 'https://raw.githubusercontent.com/onlinegistrationProg/AviatorDB/main/players.json';
+
+async function fetchPlayers(){
+  const res = await fetch(RAW+'?t='+Date.now());
+  return await res.json();
+}
+
+document.getElementById('registerBtn').onclick = async ()=>{
+  const phone = document.getElementById('phone').value.trim();
+  const pw = document.getElementById('password').value;
+  if(!phone || !pw){ document.getElementById('msg').textContent='Enter phone and password'; return; }
+
+  let players = await fetchPlayers();
+  if(players.find(p=>p.phone===phone)){ document.getElementById('msg').textContent='Phone already registered'; return; }
+
+  const newPlayer = {phone,password:pw,balance:0,deposits:[],id:'p_'+Date.now()};
+  players.push(newPlayer);
+
+  // Normally, you'd use GitHub API here to update the JSON file.
+  // For demo, we just alert.
+  alert('Player registered. Please contact admin to add you to live JSON database.');
+};
+</script>
+</body>
+</html>
