@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -40,7 +39,6 @@ input,select,textarea{padding:8px;border-radius:8px;border:1px solid rgba(255,25
 footer{margin-top:18px;color:var(--muted);font-size:13px}
 
 @media(max-width:880px){.grid{grid-template-columns:1fr}.wrap{padding:10px}.card{padding:10px}}
-
   </style>
 </head>
 <body>
@@ -51,7 +49,8 @@ footer{margin-top:18px;color:var(--muted);font-size:13px}
       <div class="muted">Central control: Players · Deposits · Schedule · Game</div>
     </div>
     <div class="user">Logged in as <strong id="adminName">Admin</strong> • <button id="logoutBtn" class="btn small">Logout</button></div>
-  </header>  <div class="grid">
+  </header>
+  <div class="grid">
     <nav class="card">
       <button class="nav-btn active" data-view="dashboard">Dashboard</button>
       <button class="nav-btn" data-view="players">Players</button>
@@ -64,103 +63,115 @@ footer{margin-top:18px;color:var(--muted);font-size:13px}
         <button id="createTestPlayer" class="btn small">Create test player</button>
         <button id="clearAll" class="btn small" style="margin-left:8px">Clear all data</button>
       </div>
-    </nav><main>
-  <section id="dashboard" class="card view">
-    <h3>Dashboard</h3>
-    <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
-      <div style="flex:1;min-width:180px" class="card">
-        <div class="muted">Players</div>
-        <div id="playersCount" style="font-size:22px;font-weight:700">0</div>
-      </div>
-      <div style="flex:1;min-width:180px" class="card">
-        <div class="muted">Pending deposits</div>
-        <div id="pendingCount" style="font-size:22px;font-weight:700">0</div>
-      </div>
-      <div style="flex:1;min-width:180px" class="card">
-        <div class="muted">Next scheduled (hour)</div>
-        <div id="nextScheduled" style="font-size:22px;font-weight:700">-</div>
-      </div>
-    </div>
+    </nav>
 
-    <div style="margin-top:14px" class="card">
-      <div class="muted">Recent actions (log)</div>
-      <div id="logArea" style="margin-top:8px;max-height:180px;overflow:auto;padding:8px;background:rgba(255,255,255,0.01);border-radius:8px"></div>
-    </div>
-  </section>
+    <main>
+      <section id="dashboard" class="card view">
+        <h3>Dashboard</h3>
+        <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px" class="card">
+            <div class="muted">Players</div>
+            <div id="playersCount" style="font-size:22px;font-weight:700">0</div>
+          </div>
+          <div style="flex:1;min-width:180px" class="card">
+            <div class="muted">Pending deposits</div>
+            <div id="pendingCount" style="font-size:22px;font-weight:700">0</div>
+          </div>
+          <div style="flex:1;min-width:180px" class="card">
+            <div class="muted">Next scheduled (hour)</div>
+            <div id="nextScheduled" style="font-size:22px;font-weight:700">-</div>
+          </div>
+        </div>
 
-  <section id="players" class="card view hidden">
-    <h3>Players</h3>
-    <div style="margin-top:10px">
-      <table>
-        <thead><tr><th>Name</th><th>Phone</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="playersTable"></tbody>
-      </table>
-    </div>
-  </section>
+        <div style="margin-top:14px" class="card">
+          <div class="muted">Recent actions (log)</div>
+          <div id="logArea" style="margin-top:8px;max-height:180px;overflow:auto;padding:8px;background:rgba(255,255,255,0.01);border-radius:8px"></div>
+        </div>
+      </section>
 
-  <section id="deposits" class="card view hidden">
-    <h3>Deposit Approval</h3>
-    <div style="margin-top:10px">
-      <table>
-        <thead><tr><th>Player</th><th>Amount</th><th>Method</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="depositsTable"></tbody>
-      </table>
-    </div>
-  </section>
+      <section id="players" class="card view hidden">
+        <h3>Players</h3>
+        <div style="margin-top:10px">
+          <table>
+            <thead><tr><th>Name</th><th>Phone</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="playersTable"></tbody>
+          </table>
+        </div>
+      </section>
 
-  <section id="schedule" class="card view hidden">
-    <h3>Daily Multiplier Schedule (24 hours)</h3>
-    <div style="margin-top:10px;overflow:auto">
-      <table>
-        <thead><tr><th>Hour</th><th>Multiplier</th><th>Repeat?</th><th>Bust Time (s)</th><th>Save</th></tr></thead>
-        <tbody id="scheduleTable"></tbody>
-      </table>
-    </div>
-    <div style="margin-top:12px" class="row">
-      <button id="applyToAll" class="btn small">Apply selected multiplier to all hours</button>
-    </div>
-  </section>
+      <section id="deposits" class="card view hidden">
+        <h3>Deposit Approval</h3>
+        <div style="margin-top:10px">
+          <table>
+            <thead><tr><th>Player</th><th>Amount</th><th>Method</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="depositsTable"></tbody>
+          </table>
+        </div>
+      </section>
 
-  <section id="game" class="card view hidden">
-    <h3>Game Result Controller</h3>
-    <div style="margin-top:10px" class="row">
-      <div style="flex:1">
-        <label class="muted">Set next bust multiplier</label>
-        <input id="nextBust" placeholder="e.g. 3.5" />
-      </div>
-      <div style="width:160px">
-        <label class="muted">Round duration (s)</label>
-        <input id="roundDuration" placeholder="e.g. 30" />
-      </div>
-      <div style="display:flex;align-items:flex-end">
-        <button id="startRound" class="btn green">Start Round</button>
-        <button id="cancelRound" class="btn red" style="margin-left:8px">Cancel Round</button>
-      </div>
+      <section id="schedule" class="card view hidden">
+        <h3>Daily Multiplier Schedule (24 hours)</h3>
+        <div style="margin-top:10px;overflow:auto">
+          <table>
+            <thead><tr><th>Hour</th><th>Multiplier</th><th>Repeat?</th><th>Bust Time (s)</th><th>Save</th></tr></thead>
+            <tbody id="scheduleTable"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:12px" class="row">
+          <button id="applyToAll" class="btn small">Apply selected multiplier to all hours</button>
+        </div>
+      </section>
+
+      <section id="game" class="card view hidden">
+        <h3>Game Result Controller</h3>
+        <div style="margin-top:10px" class="row">
+          <div style="flex:1">
+            <label class="muted">Set next bust multiplier</label>
+            <input id="nextBust" placeholder="e.g. 3.5" />
+          </div>
+          <div style="width:160px">
+            <label class="muted">Round duration (s)</label>
+            <input id="roundDuration" placeholder="e.g. 30" />
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button id="startRound" class="btn green">Start Round</button>
+            <button id="cancelRound" class="btn red" style="margin-left:8px">Cancel Round</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="card">
+          <div class="muted">Current round</div>
+          <div id="currentRound" style="font-size:20px;font-weight:700;margin-top:8px">No active round</div>
+        </div>
+
+        <div style="margin-top:12px" class="card">
+          <div class="muted">Force result now</div>
+          <div style="margin-top:8px" class="row">
+            <input id="forceMultiplier" placeholder="e.g. 2" />
+            <button id="forceBtn" class="btn small" style="margin-left:8px">Force</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="muted">Built for demo. Data stored locally (localStorage). Use "Create test player" to add sample players.</footer>
+</div>
+
+<!-- modal -->
+<div id="modal" class="modal-back hidden">
+  <div class="modal" role="dialog">
+    <h3 id="modalTitle">Edit</h3>
+    <div id="modalBody" style="margin-top:8px"></div>
+    <div style="margin-top:12px;text-align:right">
+      <button id="modalSave" class="btn green">Save</button>
+      <button id="modalClose" class="btn small">Close</button>
     </div>
+  </div>
+</div>
 
-    <div style="margin-top:12px" class="card">
-      <div class="muted">Current round</div>
-      <div id="currentRound" style="font-size:20px;font-weight:700;margin-top:8px">No active round</div>
-    </div>
-
-    <div style="margin-top:12px" class="card">
-      <div class="muted">Force result now</div>
-      <div style="margin-top:8px" class="row">
-        <input id="forceMultiplier" placeholder="e.g. 2" />
-        <button id="forceBtn" class="btn small" style="margin-left:8px">Force</button>
-      </div>
-    </div>
-  </section>
-
-</main>
-
-  </div>  <footer class="muted">Built for demo. Data stored locally (localStorage). Use "Create test player" to add sample players.</footer>
-</div><!-- simple modal for edit --><div id="modal" class="modal-back hidden"><div class="modal" role="dialog">
-  <h3 id="modalTitle">Edit</h3>
-  <div id="modalBody" style="margin-top:8px"></div>
-  <div style="margin-top:12px;text-align:right"><button id="modalSave" class="btn green">Save</button> <button id="modalClose" class="btn small">Close</button></div>
-</div></div><script>
-// --- Local data keys ---
+<script>
+/* --- Local data keys --- */
 const KEY_PLAYERS = 'avi_players_v1'
 const KEY_DEPOSITS = 'avi_deposits_v1'
 const KEY_SCHEDULE = 'avi_schedule_v1'
@@ -168,14 +179,14 @@ const KEY_LOG = 'avi_log_v1'
 const KEY_ADMIN = 'avi_admin_v1'
 const KEY_CURRENT_ROUND = 'avi_round_v1'
 
-// --- Utilities ---
+/* --- Helpers --- */
 const $ = sel => document.querySelector(sel)
 const $$ = sel => Array.from(document.querySelectorAll(sel))
 function save(key,val){localStorage.setItem(key,JSON.stringify(val))}
 function load(key, fallback){const v=localStorage.getItem(key);return v?JSON.parse(v):fallback}
 function log(msg){const logs=load(KEY_LOG,[]);logs.unshift({t:Date.now(),m:msg});save(KEY_LOG,logs.slice(0,200));renderLog()}
 
-// --- Init data if missing ---
+/* --- Init defaults --- */
 if(!localStorage.getItem(KEY_ADMIN)){
   save(KEY_ADMIN,{username:'admin',password:'admin123'})
 }
@@ -183,108 +194,352 @@ if(!localStorage.getItem(KEY_SCHEDULE)){
   const def=[];for(let h=0;h<24;h++){def.push({hour:h,multiplier:'2.0',repeat:false,bustSeconds:30})}save(KEY_SCHEDULE,def)
 }
 
-// --- Render functions ---
-function renderLog(){const logs=load(KEY_LOG,[]);const el=$('#logArea');el.innerHTML=logs.map(l=>`<div style="padding:6px;border-bottom:1px dashed rgba(255,255,255,0.02)"><div style="font-size:12px;color:var(--muted)">${new Date(l.t).toLocaleString()}</div><div>${l.m}</div></div>`).join('')}
-
-function renderDashboard(){const players=load(KEY_PLAYERS,[]);$('#playersCount').textContent=players.length;$('#pendingCount').textContent=load(KEY_DEPOSITS,[]).filter(d=>d.status==='pending').length;const schedule=load(KEY_SCHEDULE,[]);const next = schedule.find(s=>s.multiplier && s.multiplier!=='')||null;$('#nextScheduled').textContent = next? `Hour ${next.hour} → x${next.multiplier}` : '-';renderLog();}
-
-function renderPlayers(){const players=load(KEY_PLAYERS,[]);const tbody=$('#playersTable');tbody.innerHTML='';players.forEach((p,idx)=>{
-  const tr=document.createElement('tr');
-  tr.innerHTML = `<td>${p.name}</td><td>${p.phone||''}</td><td>${p.balance||0}</td><td>${p.status||'pending'}</td><td></td>`
-  const td=tr.querySelector('td:last-child')
-  const approveBtn=document.createElement('button');approveBtn.className='btn small';approveBtn.textContent = p.status==='blocked'?'Unblock':'Approve/Block';approveBtn.onclick=()=>{p.status = (p.status==='active'?'blocked':'active');save(KEY_PLAYERS,players);log(`Player ${p.name} status -> ${p.status}`);renderPlayers();renderDashboard()}
-  const reset=document.createElement('button');reset.className='btn small';reset.textContent='Reset Password';reset.style.marginLeft='6px';reset.onclick=()=>{openModal('Reset Password',`<div class="flex-col"><label>New password</label><input id="modalPw" placeholder="new password"/></div>`,()=>{const pw=$('#modalPw').value; p.password=pw;save(KEY_PLAYERS,players);log(`Password reset for ${p.name}`);closeModal();renderPlayers()})}
-  const edit=document.createElement('button');edit.className='btn small';edit.textContent='Edit Balance';edit.style.marginLeft='6px';edit.onclick=()=>{openModal('Edit Player Balance',`<div class="flex-col"><label>Balance</label><input id="modalBal" value="${p.balance||0}"/></div>`,()=>{const b=parseFloat($('#modalBal').value)||0;p.balance=b;save(KEY_PLAYERS,players);log(`Balance updated for ${p.name} -> ${b}`);closeModal();renderPlayers();renderDashboard()})}
-  const del=document.createElement('button');del.className='btn small';del.textContent='Delete';del.style.marginLeft='6px';del.onclick=()=>{if(confirm('Delete player?')){players.splice(idx,1);save(KEY_PLAYERS,players);log(`Deleted player ${p.name}`);renderPlayers();renderDashboard()}}
-  td.appendChild(approveBtn);td.appendChild(reset);td.appendChild(edit);td.appendChild(del)
-  tbody.appendChild(tr)
-})}
-
-function renderDeposits(){const deps=load(KEY_DEPOSITS,[]);const tbody=$('#depositsTable');tbody.innerHTML='';deps.forEach((d,idx)=>{
-  const tr=document.createElement('tr');
-  tr.innerHTML = `<td>${d.playerName||d.playerId}</td><td>${d.amount}</td><td>${d.method||'N/A'}</td><td>${d.status}</td><td></td>`
-  const td=tr.querySelector('td:last-child')
-  const approve=document.createElement('button');approve.className='btn small green';approve.textContent='Approve';approve.onclick=()=>{if(d.status==='pending'){d.status='approved';const players=load(KEY_PLAYERS,[]);const p=players.find(pp=>pp.id===d.playerId);if(p){p.balance = (parseFloat(p.balance)||0) + parseFloat(d.amount||0);save(KEY_PLAYERS,players)}save(KEY_DEPOSITS,deps);log(`Deposit approved: ${d.playerName} +${d.amount}`);renderDeposits();renderPlayers();renderDashboard()}}
-  const decline=document.createElement('button');decline.className='btn small red';decline.textContent='Decline';decline.style.marginLeft='6px';decline.onclick=()=>{if(confirm('Decline this deposit?')){d.status='declined';save(KEY_DEPOSITS,deps);log(`Deposit declined: ${d.playerName} ${d.amount}`);renderDeposits();renderDashboard()}};
-  td.appendChild(approve);td.appendChild(decline);tbody.appendChild(tr)
-})}
-
-function renderSchedule(){const sched=load(KEY_SCHEDULE,[]);const tbody=$('#scheduleTable');tbody.innerHTML='';sched.forEach((s,idx)=>{
-  const tr=document.createElement('tr');
-  tr.innerHTML = `<td>${s.hour}:00</td><td><input data-hour="${s.hour}" class="multInp" value="${s.multiplier}"/></td><td><input type=checkbox data-hour-repeat="${s.hour}" ${s.repeat? 'checked':''}/></td><td><input data-hour-bust="${s.hour}" value="${s.bustSeconds}"/></td><td><button class="btn small" data-save="${s.hour}">Save</button></td>`
-  tbody.appendChild(tr)
-})
-  // attach handlers
-  $$('.multInp').forEach(inp=>inp.onchange = ()=>{const hour=parseInt(inp.dataset.hour);const sched=load(KEY_SCHEDULE,[]);sched[hour].multiplier = inp.value;save(KEY_SCHEDULE,sched);log(`Schedule x${inp.value} at ${hour}:00 updated`);renderDashboard()})
-  $$('input[data-hour-repeat]').forEach(cb=>cb.onchange = ()=>{const hour=parseInt(cb.dataset.hourRepeat);const sched=load(KEY_SCHEDULE,[]);sched[hour].repeat = cb.checked;save(KEY_SCHEDULE,sched);log(`Schedule repeat ${cb.checked} at ${hour}:00`);renderDashboard()})
-  $$('input[data-hour-bust]').forEach(inp=>inp.onchange = ()=>{const hour=parseInt(inp.dataset.hourBust);const sched=load(KEY_SCHEDULE,[]);sched[hour].bustSeconds = parseInt(inp.value)||30;save(KEY_SCHEDULE,sched);log(`Bust seconds set ${inp.value} at ${hour}:00`);renderDashboard()})
-  $$('button[data-save]').forEach(btn=>btn.onclick=()=>{const hour=parseInt(btn.dataset.save);const sched=load(KEY_SCHEDULE,[]);save(KEY_SCHEDULE,sched);log(`Saved schedule for ${hour}:00`);renderDashboard()})
+/* --- Renders --- */
+function renderLog(){
+  const logs=load(KEY_LOG,[]);
+  const el=$('#logArea');
+  el.innerHTML = logs.map(l=>`<div style="padding:6px;border-bottom:1px dashed rgba(255,255,255,0.02)"><div style="font-size:12px;color:var(--muted)">${new Date(l.t).toLocaleString()}</div><div>${l.m}</div></div>`).join('');
 }
 
-// --- Round handling ---
-let roundTimer = null
-function renderRound(){const r = load(KEY_CURRENT_ROUND,null); const el=$('#currentRound'); if(!r || !r.active){el.textContent='No active round';return}
-  el.textContent = `Round active — multiplier: x${r.multiplier} • time left: ${r.timeLeft}s` }
+function renderDashboard(){
+  const players=load(KEY_PLAYERS,[]);
+  $('#playersCount').textContent = players.length;
+  $('#pendingCount').textContent = load(KEY_DEPOSITS,[]).filter(d=>d.status==='pending').length;
+  const schedule=load(KEY_SCHEDULE,[]);
+  const next = schedule.find(s=>s.multiplier && s.multiplier!=='')||null;
+  $('#nextScheduled').textContent = next? `Hour ${next.hour} → x${next.multiplier}` : '-';
+  renderLog();
+}
 
-function startRound(manual){const mult = manual.multiplier;const duration = manual.duration;const round = {active:true,multiplier:mult,timeLeft:duration,startedAt:Date.now()};save(KEY_CURRENT_ROUND,round);log(`Round started: x${mult} for ${duration}s`);renderRound();
+function renderPlayers(){
+  const players=load(KEY_PLAYERS,[]);
+  const tbody=$('#playersTable');
+  tbody.innerHTML='';
+  players.forEach((p,idx)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${p.name}</td><td>${p.phone||''}</td><td>${p.balance||0}</td><td>${p.status||'pending'}</td><td></td>`;
+    const td=tr.querySelector('td:last-child');
+
+    const approveBtn=document.createElement('button');
+    approveBtn.className='btn small';
+    approveBtn.textContent = p.status==='blocked'?'Unblock':'Approve/Block';
+    approveBtn.onclick = ()=>{
+      p.status = (p.status==='active'?'blocked':'active');
+      save(KEY_PLAYERS,players);
+      log(`Player ${p.name} status -> ${p.status}`);
+      renderPlayers(); renderDashboard();
+    };
+
+    const reset=document.createElement('button');
+    reset.className='btn small';
+    reset.textContent='Reset Password';
+    reset.style.marginLeft='6px';
+    reset.onclick=()=>{
+      openModal('Reset Password',`<div class="flex-col"><label>New password</label><input id="modalPw" placeholder="new password"/></div>`,()=>{
+        const pw=$('#modalPw').value;
+        p.password=pw;
+        save(KEY_PLAYERS,players);
+        log(`Password reset for ${p.name}`);
+        closeModal();
+        renderPlayers();
+      });
+    };
+
+    const edit=document.createElement('button');
+    edit.className='btn small';
+    edit.textContent='Edit Balance';
+    edit.style.marginLeft='6px';
+    edit.onclick=()=>{
+      openModal('Edit Player Balance',`<div class="flex-col"><label>Balance</label><input id="modalBal" value="${p.balance||0}"/></div>`,()=>{
+        const b=parseFloat($('#modalBal').value)||0;
+        p.balance=b;
+        save(KEY_PLAYERS,players);
+        log(`Balance updated for ${p.name} -> ${b}`);
+        closeModal();
+        renderPlayers();
+        renderDashboard();
+      });
+    };
+
+    const del=document.createElement('button');
+    del.className='btn small';
+    del.textContent='Delete';
+    del.style.marginLeft='6px';
+    del.onclick=()=>{
+      if(confirm('Delete player?')){
+        players.splice(idx,1);
+        save(KEY_PLAYERS,players);
+        log(`Deleted player ${p.name}`);
+        renderPlayers(); renderDashboard();
+      }
+    };
+
+    td.appendChild(approveBtn);
+    td.appendChild(reset);
+    td.appendChild(edit);
+    td.appendChild(del);
+    tbody.appendChild(tr);
+  });
+}
+
+function renderDeposits(){
+  const deps=load(KEY_DEPOSITS,[]);
+  const tbody=$('#depositsTable');
+  tbody.innerHTML='';
+  deps.forEach((d,idx)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${d.playerName||d.playerId}</td><td>${d.amount}</td><td>${d.method||'N/A'}</td><td>${d.status}</td><td></td>`;
+    const td=tr.querySelector('td:last-child');
+
+    const approve=document.createElement('button');
+    approve.className='btn small green';
+    approve.textContent='Approve';
+    approve.onclick=()=>{
+      if(d.status==='pending'){
+        d.status='approved';
+        const players=load(KEY_PLAYERS,[]);
+        const p = players.find(pp=>pp.id===d.playerId);
+        if(p){ p.balance = (parseFloat(p.balance)||0) + parseFloat(d.amount||0); save(KEY_PLAYERS,players); }
+        save(KEY_DEPOSITS,deps);
+        log(`Deposit approved: ${d.playerName} +${d.amount}`);
+        renderDeposits(); renderPlayers(); renderDashboard();
+      }
+    };
+
+    const decline=document.createElement('button');
+    decline.className='btn small red';
+    decline.textContent='Decline';
+    decline.style.marginLeft='6px';
+    decline.onclick=()=>{
+      if(confirm('Decline this deposit?')){
+        d.status='declined';
+        save(KEY_DEPOSITS,deps);
+        log(`Deposit declined: ${d.playerName} ${d.amount}`);
+        renderDeposits(); renderDashboard();
+      }
+    };
+
+    td.appendChild(approve); td.appendChild(decline);
+    tbody.appendChild(tr);
+  });
+}
+
+function renderSchedule(){
+  const sched=load(KEY_SCHEDULE,[]);
+  const tbody=$('#scheduleTable');
+  tbody.innerHTML='';
+  sched.forEach((s,idx)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${s.hour}:00</td>
+      <td><input data-hour="${s.hour}" class="multInp" value="${s.multiplier}"/></td>
+      <td><input type="checkbox" data-hour-repeat="${s.hour}" ${s.repeat? 'checked':''}/></td>
+      <td><input data-hour-bust="${s.hour}" value="${s.bustSeconds}"/></td>
+      <td><button class="btn small" data-save="${s.hour}">Save</button></td>`;
+    tbody.appendChild(tr);
+  });
+
+  // attach handlers (re-query)
+  $$('.multInp').forEach(inp=>inp.onchange = ()=>{
+    const hour = parseInt(inp.dataset.hour);
+    const sched = load(KEY_SCHEDULE,[]);
+    sched[hour].multiplier = inp.value;
+    save(KEY_SCHEDULE,sched);
+    log(`Schedule x${inp.value} at ${hour}:00 updated`);
+    renderDashboard();
+  });
+
+  $$('input[data-hour-repeat]').forEach(cb=>cb.onchange = ()=>{
+    const hour = parseInt(cb.dataset.hourRepeat);
+    const sched = load(KEY_SCHEDULE,[]);
+    sched[hour].repeat = cb.checked;
+    save(KEY_SCHEDULE,sched);
+    log(`Schedule repeat ${cb.checked} at ${hour}:00`);
+    renderDashboard();
+  });
+
+  $$('input[data-hour-bust]').forEach(inp=>inp.onchange = ()=>{
+    const hour = parseInt(inp.dataset.hourBust);
+    const sched = load(KEY_SCHEDULE,[]);
+    sched[hour].bustSeconds = parseInt(inp.value) || 30;
+    save(KEY_SCHEDULE,sched);
+    log(`Bust seconds set ${inp.value} at ${hour}:00`);
+    renderDashboard();
+  });
+
+  $$('button[data-save]').forEach(btn=>btn.onclick = ()=>{
+    const hour = parseInt(btn.dataset.save);
+    const sched = load(KEY_SCHEDULE,[]);
+    save(KEY_SCHEDULE,sched);
+    log(`Saved schedule for ${hour}:00`);
+    renderDashboard();
+  });
+}
+
+/* --- Round handling --- */
+let roundTimer = null;
+function renderRound(){
+  const r = load(KEY_CURRENT_ROUND,null);
+  const el=$('#currentRound');
+  if(!r || !r.active){ el.textContent='No active round'; return; }
+  el.textContent = `Round active — multiplier: x${r.multiplier} • time left: ${r.timeLeft}s`;
+}
+
+function startRound(manual){
+  const mult = manual.multiplier;
+  const duration = manual.duration;
+  const round = {active:true,multiplier:mult,timeLeft:duration,startedAt:Date.now()};
+  save(KEY_CURRENT_ROUND,round);
+  log(`Round started: x${mult} for ${duration}s`);
+  renderRound();
   if(roundTimer) clearInterval(roundTimer);
-  roundTimer = setInterval(()=>{const r = load(KEY_CURRENT_ROUND); if(!r || !r.active){clearInterval(roundTimer);return} r.timeLeft = Math.max(0, Math.round((r.startedAt + (manual.duration*1000) - Date.now())/1000)); save(KEY_CURRENT_ROUND,r); renderRound(); if(r.timeLeft<=0){ // bust!
-        r.active=false; save(KEY_CURRENT_ROUND,r); clearInterval(roundTimer); log(`Round busted at x${r.multiplier}`); renderRound(); }
-  },500);
+  roundTimer = setInterval(()=>{
+    const r = load(KEY_CURRENT_ROUND);
+    if(!r || !r.active){ clearInterval(roundTimer); return; }
+    r.timeLeft = Math.max(0, Math.round((r.startedAt + (manual.duration*1000) - Date.now())/1000));
+    save(KEY_CURRENT_ROUND,r);
+    renderRound();
+    if(r.timeLeft<=0){
+      r.active=false;
+      save(KEY_CURRENT_ROUND,r);
+      clearInterval(roundTimer);
+      log(`Round busted at x${r.multiplier}`);
+      renderRound();
+    }
+  }, 500);
 }
-function cancelRound(){const r = load(KEY_CURRENT_ROUND,{});r.active=false;save(KEY_CURRENT_ROUND,r);if(roundTimer)clearInterval(roundTimer);log('Round cancelled');renderRound()}
 
-// Force immediate result
-function forceResult(mult){const r = load(KEY_CURRENT_ROUND,{}); if(!r || !r.active){alert('No active round to force');return} r.multiplier = mult; r.active=false; save(KEY_CURRENT_ROUND,r); if(roundTimer) clearInterval(roundTimer); log(`Round forced to x${mult}`); renderRound();}
+function cancelRound(){
+  const r = load(KEY_CURRENT_ROUND,{});
+  r.active=false; save(KEY_CURRENT_ROUND,r);
+  if(roundTimer) clearInterval(roundTimer);
+  log('Round cancelled');
+  renderRound();
+}
 
-// --- Modal ---
-function openModal(title,html,onSave){$('#modal').classList.remove('hidden');$('#modalTitle').textContent=title;$('#modalBody').innerHTML=html;$('#modalSave').onclick = onSave;$('#modalClose').onclick = closeModal}
-function closeModal(){document.getElementById('modal').classList.add('hidden')}
+function forceResult(mult){
+  const r = load(KEY_CURRENT_ROUND,{});
+  if(!r || !r.active){ alert('No active round to force'); return; }
+  r.multiplier = mult; r.active=false; save(KEY_CURRENT_ROUND,r);
+  if(roundTimer) clearInterval(roundTimer);
+  log(`Round forced to x${mult}`);
+  renderRound();
+}
 
-// --- Nav ---
-$$('.nav-btn').forEach(b=>b.onclick=()=>{$$('.nav-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');$$('.view').forEach(v=>v.classList.add('hidden'));$('#'+b.dataset.view).classList.remove('hidden')})
+/* --- Modal --- */
+function openModal(title,html,onSave){
+  $('#modal').classList.remove('hidden');
+  $('#modalTitle').textContent = title;
+  $('#modalBody').innerHTML = html;
+  $('#modalSave').onclick = onSave;
+  $('#modalClose').onclick = closeModal;
+}
+function closeModal(){
+  $('#modal').classList.add('hidden');
+  // remove handlers to avoid accidental reuse
+  $('#modalSave').onclick = null;
+  $('#modalClose').onclick = null;
+}
 
-// --- Buttons ---
+/* --- Navigation (fixed) --- */
+$$('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    $$('.nav-btn').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    $$('.view').forEach(v=>v.classList.add('hidden'));
+    const view = btn.dataset.view;
+    const el = document.getElementById(view);
+    if(el) el.classList.remove('hidden');
+
+    // refresh content for the view
+    if(view === 'dashboard') renderDashboard();
+    if(view === 'players') renderPlayers();
+    if(view === 'deposits') renderDeposits();
+    if(view === 'schedule') renderSchedule();
+    if(view === 'game') renderRound();
+  });
+});
+
+/* --- Buttons & actions --- */
 $('#createTestPlayer').onclick = ()=>{
-  const players = load(KEY_PLAYERS,[]);
-  const id = 'p_'+Date.now();
-  players.push({id,name:'Player'+(players.length+1),phone:'07'+Math.floor(Math.random()*90000000+10000000),balance:0,status:'active',password:'pass123'});
-  save(KEY_PLAYERS,players);log('Test player created');renderPlayers();renderDashboard()
-}
+  const players = load(KEY_PLAYERS,[]) || [];
+  const newId = 'p_' + Date.now();
+  const newName = 'Player' + (players.length + 1);
+  players.push({ id: newId, name: newName, phone: '07' + Math.floor(Math.random()*90000000+10000000), balance: 0, status: 'active', password: 'pass123' });
+  save(KEY_PLAYERS,players);
+  log('Test player created: ' + newName);
+  renderPlayers(); renderDashboard();
+};
 
-$('#clearAll').onclick = ()=>{if(confirm('Clear ALL stored data (players, deposits, schedule, logs)?')){localStorage.removeItem(KEY_PLAYERS);localStorage.removeItem(KEY_DEPOSITS);localStorage.removeItem(KEY_SCHEDULE);localStorage.removeItem(KEY_LOG);localStorage.removeItem(KEY_CURRENT_ROUND);location.reload()}}
+$('#clearAll').onclick = ()=>{
+  if(confirm('Clear ALL stored data (players, deposits, schedule, logs, rounds)?')){
+    localStorage.removeItem(KEY_PLAYERS);
+    localStorage.removeItem(KEY_DEPOSITS);
+    localStorage.removeItem(KEY_SCHEDULE);
+    localStorage.removeItem(KEY_LOG);
+    localStorage.removeItem(KEY_CURRENT_ROUND);
+    // keep admin credential for demo convenience, but reset it
+    save(KEY_ADMIN,{username:'admin',password:'admin123'});
+    location.reload();
+  }
+};
 
 $('#applyToAll').onclick = ()=>{
-  const val = prompt('Enter multiplier to apply to all hours (e.g. 2.0)'); if(!val) return; const sched=load(KEY_SCHEDULE,[]);sched.forEach(s=>{s.multiplier=val});save(KEY_SCHEDULE,sched);log(`Applied x${val} to all hours`);renderSchedule();renderDashboard()
+  const val = prompt('Enter multiplier to apply to all hours (e.g. 2.0)');
+  if(!val) return;
+  const sched=load(KEY_SCHEDULE,[]);
+  sched.forEach(s=>{s.multiplier=val});
+  save(KEY_SCHEDULE,sched);
+  log(`Applied x${val} to all hours`);
+  renderSchedule(); renderDashboard();
+};
+
+$('#startRound').onclick = ()=>{
+  const mult = parseFloat($('#nextBust').value) || null;
+  const dur = parseInt($('#roundDuration').value) || null;
+  if(!mult || !dur){ alert('Enter valid multiplier and duration'); return; }
+  startRound({multiplier: mult, duration: dur});
+};
+
+$('#cancelRound').onclick = ()=>{
+  if(confirm('Cancel active round?')) cancelRound();
+};
+
+$('#forceBtn').onclick = ()=>{
+  const m = parseFloat($('#forceMultiplier').value);
+  if(isNaN(m)){ return alert('Enter multiplier'); }
+  if(confirm('Force result now?')) forceResult(m);
+};
+
+$('#logoutBtn').onclick = ()=>{
+  if(confirm('Logout admin?')){ alert('Logged out (demo)'); location.reload(); }
+};
+
+/* --- Page load / init --- */
+function init(){
+  renderDashboard();
+  renderPlayers();
+  renderDeposits();
+  renderSchedule();
+  renderRound();
 }
+init();
 
-$('#startRound').onclick = ()=>{const mult = parseFloat($('#nextBust').value)||2.0;const dur = parseInt($('#roundDuration').value)||30;startRound({multiplier:mult,duration:dur})}
-$('#cancelRound').onclick = ()=>{if(confirm('Cancel active round?')) cancelRound()}
-$('#forceBtn').onclick = ()=>{const m = parseFloat($('#forceMultiplier').value); if(isNaN(m)) return alert('Enter multiplier'); if(confirm('Force result now?')) forceResult(m)}
-
-// logout just clears admin marker (demo)
-$('#logoutBtn').onclick = ()=>{if(confirm('Logout admin?')){alert('Logged out (demo)')}}
-
-// --- Page load ---
-function init(){renderDashboard();renderPlayers();renderDeposits();renderSchedule();renderRound();}
-init()
-
-// Render deposits on demand — we want sample data
+/* --- create a sample pending deposit if deposits empty and a player exists --- */
 window.addEventListener('load', ()=>{
-  // if no deposits, create a sample pending deposit to show flow
-  const deps = load(KEY_DEPOSITS,[]);
+  const deps = load(KEY_DEPOSITS,[]) || [];
   if(deps.length===0){
-    const players=load(KEY_PLAYERS,[]);
+    const players = load(KEY_PLAYERS,[]) || [];
     if(players.length>0){
-      deps.push({id:'d_'+Date.now(),playerId:players[0].id,playerName:players[0].name,amount:50,method:'MobileMoney',status:'pending'});
+      deps.push({ id: 'd_' + Date.now(), playerId: players[0].id, playerName: players[0].name, amount: 50, method:'MobileMoney', status:'pending' });
       save(KEY_DEPOSITS,deps);
     }
   }
   renderDeposits();
-})
+});
 
-// expose some helper on window for debugging
-window.__aviator_admin = {load,save,KEY_PLAYERS,KEY_DEPOSITS,KEY_SCHEDULE,log}
+/* --- expose helper for debugging --- */
+window.__aviator_admin = { load, save, KEY_PLAYERS, KEY_DEPOSITS, KEY_SCHEDULE, log };
 
-</script></body>
-</html>
+</script>
+</body>
+  </html>
