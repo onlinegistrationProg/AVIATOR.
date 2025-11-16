@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Aviator — Admin</title>
 <style>
   body{margin:0;background:#0d0d0f;color:#fff;font-family:Arial,Helvetica,sans-serif}
@@ -22,15 +23,9 @@
   <header>
     <h2>Aviator Admin</h2>
     <div>
-      Current code: <span id="code" class="codebox">000000</span>
-      <button id="regen">Change Now</button>
+      <span>Admin Panel</span>
     </div>
   </header>
-
-  <div class="panel">
-    <h3>Auto 6-digit code (changes every 60s)</h3>
-    <p class="muted">Press "Change Now" to force immediate change. This code can be shown to staff; it's not a security critical secret here.</p>
-  </div>
 
   <div class="panel">
     <h3>Deposit Queue</h3>
@@ -47,105 +42,62 @@
 
   <div class="panel">
     <h3>Rounds Control</h3>
-    <p>Regenerate today's rounds (will replace todays sequence for everyone).</p>
+    <p>Regenerate today's rounds (will replace today's sequence for everyone).</p>
     <button id="regenRounds" class="red">Regenerate Today's Rounds</button>
-  </div>
-
-  <div class="panel">
-    <h3>Quick User Lookup</h3>
-    <input id="lookupPhone" placeholder="Phone" style="padding:8px;border-radius:6px;border:none"/>
-    <button id="lookupBtn">Lookup</button>
-    <div id="lookupRes" style="margin-top:10px"></div>
   </div>
 </div>
 
 <script>
-  // admin page logic
-  const codeEl = document.getElementById('code')
-  const regenBtn = document.getElementById('regen')
-  function gen6(){ return Math.floor(100000 + Math.random()*900000).toString() }
-  function setCode(c){ codeEl.textContent = c }
-  function autoTick(){
-    const c = gen6(); localStorage.setItem('aviator_admin_code', c); setCode(c)
-  }
-  // auto change every 60s
-  autoTick()
-  setInterval(autoTick, 60000)
-  regenBtn.addEventListener('click', autoTick)
+const dqT = document.getElementById('dq');
+function renderDQ(){
+  const q = JSON.parse(localStorage.getItem('aviator_deposits')||'[]');
+  dqT.innerHTML = '';
+  q.forEach((it,idx)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${it.phone}</td><td>${it.amount}</td><td>${it.note||''}</td>
+      <td>
+        <button onclick="approve(${idx})" class="green">Approve</button>
+        <button onclick="decline(${idx})" class="red">Decline</button>
+      </td>`;
+    dqT.appendChild(tr);
+  });
+}
+window.approve = function(i){
+  const q = JSON.parse(localStorage.getItem('aviator_deposits')||'[]');
+  const it = q[i];
+  if(!it) return alert('Not found');
+  const users = JSON.parse(localStorage.getItem('aviator_users')||'{}');
+  if(users[it.phone]) users[it.phone].balance = (users[it.phone].balance||0) + Number(it.amount);
+  else users[it.phone] = {password:'', balance: Number(it.amount)};
+  localStorage.setItem('aviator_users', JSON.stringify(users));
+  q.splice(i,1);
+  localStorage.setItem('aviator_deposits', JSON.stringify(q));
+  renderDQ();
+}
+window.decline = function(i){
+  const q = JSON.parse(localStorage.getItem('aviator_deposits')||'[]');
+  q.splice(i,1);
+  localStorage.setItem('aviator_deposits', JSON.stringify(q));
+  renderDQ();
+}
+document.getElementById('addDeposit').addEventListener('click', ()=>{
+  const phone = document.getElementById('dqPhone').value.trim();
+  const amount = Number(document.getElementById('dqAmt').value);
+  if(!phone||!amount) return alert('Fill fields');
+  const q = JSON.parse(localStorage.getItem('aviator_deposits')||'[]');
+  q.push({phone,amount,note:'manual'});
+  localStorage.setItem('aviator_deposits', JSON.stringify(q));
+  renderDQ();
+  document.getElementById('dqPhone').value=''; document.getElementById('dqAmt').value='';
+});
 
-  // deposit queue
-  const dqT = document.getElementById('dq')
-  function renderDQ(){
-    const q = JSON.parse(localStorage.getItem('aviator_deposits')||'[]')
-    dqT.innerHTML = ''
-    q.forEach((it,idx)=>{
-      const tr = document.createElement('tr')
-      tr.innerHTML = `<td>${it.phone}</td><td>${it.amount}</td><td>${it.note||''}</td>
-        <td>
-          <button onclick="approve(${idx})" class="green">Approve</button>
-          <button onclick="decline(${idx})" class="red">Decline</button>
-        </td>`
-      dqT.appendChild(tr)
-    })
-  }
-  window.approve = function(i){
-    const q = JSON.parse(localStorage.getItem('aviator_deposits')||'[]')
-    const it = q[i]
-    if(!it) return alert('Not found')
-    // add to user's balance automatically (if user exists)
-    const users = JSON.parse(localStorage.getItem('aviator_users')||'{}')
-    if(users[it.phone]) users[it.phone].balance = (users[it.phone].balance||0) + Number(it.amount)
-    else {
-      // create user with deposit as balance (no password)
-      users[it.phone] = {password:'', balance: Number(it.amount)}
-    }
-    localStorage.setItem('aviator_users', JSON.stringify(users))
-    // remove deposit
-    q.splice(i,1)
-    localStorage.setItem('aviator_deposits', JSON.stringify(q))
-    renderDQ()
-    alert('Approved and balance updated')
-  }
-  window.decline = function(i){
-    const q = JSON.parse(localStorage.getItem('aviator_deposits')||'[]')
-    q.splice(i,1)
-    localStorage.setItem('aviator_deposits', JSON.stringify(q))
-    renderDQ()
-  }
-  document.getElementById('addDeposit').addEventListener('click', ()=>{
-    const phone = document.getElementById('dqPhone').value.trim()
-    const amount = Number(document.getElementById('dqAmt').value)
-    if(!phone||!amount) return alert('Fill fields')
-    const q = JSON.parse(localStorage.getItem('aviator_deposits')||'[]')
-    q.push({phone,amount,note:'manual'})
-    localStorage.setItem('aviator_deposits', JSON.stringify(q))
-    renderDQ()
-    document.getElementById('dqPhone').value=''; document.getElementById('dqAmt').value=''
-  })
+document.getElementById('regenRounds').addEventListener('click', ()=>{
+  const key = 'aviator_rounds_'+new Date().toISOString().slice(0,10);
+  localStorage.removeItem(key);
+  alert('Today\'s rounds removed. They will regenerate for all players when loaded.');
+});
 
-  // regenerate today's rounds (admin control)
-  document.getElementById('regenRounds').addEventListener('click', ()=>{
-    const keyPrefix = 'aviator_rounds_'
-    // delete today's rounds
-    const d = new Date(); const key = d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()
-    localStorage.removeItem(keyPrefix+key)
-    alert('Today\'s rounds removed. They will be regenerated when player loads player.html')
-  })
-
-  // lookup
-  document.getElementById('lookupBtn').addEventListener('click', ()=>{
-    const phone = document.getElementById('lookupPhone').value.trim()
-    const users = JSON.parse(localStorage.getItem('aviator_users')||'{}')
-    const out = document.getElementById('lookupRes')
-    if(!phone) return out.textContent='Enter phone'
-    if(users[phone]) out.innerHTML = `<pre>${JSON.stringify(users[phone],null,2)}</pre>`
-    else out.textContent = 'User not found'
-  })
-
-  // initial renders
-  renderDQ()
-  // load saved code if any
-  const savedCode = localStorage.getItem('aviator_admin_code'); if(savedCode) setCode(savedCode)
+renderDQ();
 </script>
 </body>
 </html>
