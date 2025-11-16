@@ -6,52 +6,48 @@
 <title>Aviator — Player</title>
 <style>
   body {margin:0;background:#0d0d0f;color:#fff;font-family:Arial,Helvetica,sans-serif}
-  .wrap{max-width:900px;margin:14px auto;padding:12px}
+  .wrap{max-width:500px;margin:14px auto;padding:12px}
   h2{color:#ff3344}
   .panel{background:#111;padding:12px;border-radius:10px;margin-top:12px}
   input, button {padding:8px;border-radius:6px;border:none;margin:4px 0;width:100%;}
-  button {cursor:pointer;color:#fff;}
+  button{cursor:pointer;color:#fff;}
   .green{background:#25b24a;}
   .red{background:#ff5555;}
-  #cashOut {display:none;}
+  #multiplierDisplay{font-size:24px;font-weight:bold;margin:10px 0;}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h2>Aviator — Player</h2>
+  <h2>Aviator — Player Login</h2>
 
-  <!-- LOGIN / REGISTER -->
   <div class="panel" id="loginPanel">
-    <input type="text" id="phone" placeholder="Phone Number" autocomplete="tel">
-    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-    <input type="password" id="confirm" placeholder="Confirm Password" autocomplete="new-password">
+    <input type="text" id="playerPhone" placeholder="Phone Number" autocomplete="username">
+    <input type="password" id="playerPass" placeholder="Password" autocomplete="current-password">
     <button id="loginBtn">Login / Register</button>
   </div>
 
-  <!-- PLAYER PANEL -->
   <div class="panel" id="playerPanel" style="display:none;">
-    <h3>Balance: <span id="balance">0</span></h3>
+    <h3>Welcome, <span id="playerName"></span></h3>
+    <p>Balance: $<span id="balanceDisplay">0</span></p>
 
-    <!-- Deposit Request -->
     <div class="panel">
       <h4>Deposit Request</h4>
-      <input type="number" id="depAmount" placeholder="Amount">
-      <button id="requestDep">Request Deposit</button>
+      <input type="number" id="depositAmt" placeholder="Amount to deposit">
+      <button id="requestDeposit" class="green">Request Deposit</button>
+      <p style="font-size:12px;">Deposits will reflect after admin approval.</p>
     </div>
 
-    <!-- Stake / Round -->
     <div class="panel">
-      <h4>Stake / Round</h4>
-      <input type="number" id="stakeAmount" placeholder="Stake Amount">
-      <button id="startRound">Start Round</button>
-      <button id="cashOut">Cash Out</button>
-      <p>Current Multiplier: <span id="multiplier">1.00x</span></p>
+      <h4>Place Stake</h4>
+      <input type="number" id="stakeAmt" placeholder="Amount to stake">
+      <button id="startRound" class="green">Start Round</button>
+      <p id="multiplierDisplay">Multiplier: 1.00x</p>
+      <button id="cashOut" class="green" style="display:none;">Cash Out</button>
     </div>
 
-    <!-- Past Multipliers -->
     <div class="panel">
       <h4>Past Multipliers</h4>
-      <ul id="pastRounds"></ul>
+      <textarea id="pastMults" rows="5" readonly style="width:100%;background:#222;color:#fff;"></textarea>
     </div>
 
     <button id="logoutBtn" class="red">Logout</button>
@@ -59,144 +55,124 @@
 </div>
 
 <script>
-let currentUser = null;
-let roundInterval = null;
+let currentPlayer = null;
+let currentStake = 0;
 let currentMultiplier = 1;
-let stakedAmount = 0;
-
-// UTILITIES
-function saveUsers(users){ localStorage.setItem('aviator_users', JSON.stringify(users)) }
-function getUsers(){ return JSON.parse(localStorage.getItem('aviator_users')||'{}') }
-function saveRounds(rounds){ localStorage.setItem('aviator_rounds_'+new Date().toISOString().slice(0,10), JSON.stringify(rounds)) }
-function getRounds(){ return JSON.parse(localStorage.getItem('aviator_rounds_'+new Date().toISOString().slice(0,10))||'[]') }
+let multiplierInterval = null;
 
 // LOGIN / REGISTER
 document.getElementById('loginBtn').addEventListener('click', ()=>{
-  const phone = document.getElementById('phone').value.trim();
-  const pass = document.getElementById('password').value;
-  const confirm = document.getElementById('confirm').value;
-  if(!phone || !pass) return alert('Enter phone and password');
-  const users = getUsers();
-  if(!users[phone]){
-    if(!confirm) return alert('Confirm password for registration');
-    if(pass !== confirm) return alert('Passwords do not match');
-    users[phone] = {password: pass, balance:0};
-    saveUsers(users);
+  const phone = document.getElementById('playerPhone').value.trim();
+  const pass = document.getElementById('playerPass').value;
+  if(!phone||!pass) return alert('Enter phone and password');
+  const users = JSON.parse(localStorage.getItem('aviator_users')||'{}');
+  if(users[phone]){
+    if(users[phone].password!==pass) return alert('Incorrect password');
   } else {
-    if(users[phone].password !== pass) return alert('Incorrect password');
+    users[phone] = {password:pass, balance:0};
+    localStorage.setItem('aviator_users', JSON.stringify(users));
   }
-  currentUser = phone;
-  localStorage.setItem('aviator_last_user', currentUser);
+  currentPlayer = phone;
   document.getElementById('loginPanel').style.display='none';
   document.getElementById('playerPanel').style.display='block';
+  document.getElementById('playerName').textContent = currentPlayer;
   updateBalance();
-  loadPastRounds();
+  loadPastMultipliers();
 });
 
 // LOGOUT
 document.getElementById('logoutBtn').addEventListener('click', ()=>{
-  currentUser = null;
-  document.getElementById('playerPanel').style.display='none';
+  currentPlayer = null;
+  stopRound();
   document.getElementById('loginPanel').style.display='block';
-  document.getElementById('password').value='';
-  document.getElementById('confirm').value='';
+  document.getElementById('playerPanel').style.display='none';
 });
 
 // UPDATE BALANCE
 function updateBalance(){
-  const users = getUsers();
-  document.getElementById('balance').textContent = users[currentUser]?.balance || 0;
+  const users = JSON.parse(localStorage.getItem('aviator_users')||'{}');
+  document.getElementById('balanceDisplay').textContent = users[currentPlayer]?.balance||0;
 }
 
 // DEPOSIT REQUEST
-document.getElementById('requestDep').addEventListener('click', ()=>{
-  const amt = Number(document.getElementById('depAmount').value);
-  if(!amt || amt<=0) return alert('Enter valid amount');
-  const dep = JSON.parse(localStorage.getItem('aviator_deposits') || '[]');
-  dep.push({phone: currentUser, amount: amt, note:'player request'});
-  localStorage.setItem('aviator_deposits', JSON.stringify(dep));
-  alert('Deposit requested. Admin approval required.');
-  document.getElementById('depAmount').value='';
+document.getElementById('requestDeposit').addEventListener('click', ()=>{
+  const amt = Number(document.getElementById('depositAmt').value);
+  if(!amt) return alert('Enter amount');
+  const deposits = JSON.parse(localStorage.getItem('aviator_deposits')||'[]');
+  deposits.push({phone:currentPlayer, amount:amt, note:'player request'});
+  localStorage.setItem('aviator_deposits', JSON.stringify(deposits));
+  alert('Deposit requested. Wait for admin approval.');
+  document.getElementById('depositAmt').value='';
 });
 
-// ROUND / STAKING
+// LOAD PAST MULTIPLIERS
+function loadPastMultipliers(){
+  const key = 'aviator_rounds_'+new Date().toISOString().slice(0,10);
+  const rounds = JSON.parse(localStorage.getItem(key)||'[]');
+  document.getElementById('pastMults').value = rounds.join(',');
+}
+
+// START ROUND with smooth multiplier
 document.getElementById('startRound').addEventListener('click', ()=>{
-  const stake = Number(document.getElementById('stakeAmount').value);
-  const users = getUsers();
-  if(!stake || stake <=0 || stake > (users[currentUser].balance || 0)) return alert('Invalid stake');
-  stakedAmount = stake;
-  users[currentUser].balance -= stake;
-  saveUsers(users);
+  const amt = Number(document.getElementById('stakeAmt').value);
+  if(!amt) return alert('Enter stake amount');
+  const users = JSON.parse(localStorage.getItem('aviator_users')||'{}');
+  if(users[currentPlayer].balance < amt) return alert('Insufficient balance');
+
+  users[currentPlayer].balance -= amt;
+  localStorage.setItem('aviator_users', JSON.stringify(users));
   updateBalance();
+
+  currentStake = amt;
   currentMultiplier = 1;
   document.getElementById('cashOut').style.display='inline-block';
 
-  const rounds = getRounds();
-  let roundIndex = 0;
+  const key = 'aviator_rounds_'+new Date().toISOString().slice(0,10);
+  const rounds = JSON.parse(localStorage.getItem(key)||'[]');
+  let idx = 0;
+  let lastVal = 1;
 
-  roundInterval = setInterval(()=>{
-    if(roundIndex < rounds.length){
-      currentMultiplier = rounds[roundIndex];
-      roundIndex++;
-    } else {
-      const incr = 0.01 + Math.random()*0.05;
-      currentMultiplier = parseFloat((currentMultiplier + incr).toFixed(2));
-      rounds.push(currentMultiplier);
-      saveRounds(rounds);
+  multiplierInterval = setInterval(()=>{
+    if(idx >= rounds.length){
+      alert('Round ended! You did not cash out. Stake lost.');
+      stopRound();
+      return;
     }
-    document.getElementById('multiplier').textContent = currentMultiplier+'x';
-    // random bust check at last multiplier
-    if(roundIndex===rounds.length && Math.random() < 0.01){
-      clearInterval(roundInterval);
-      alert('BUST! You lost your stake.');
-      stakedAmount = 0;
-      document.getElementById('cashOut').style.display='none';
-      loadPastRounds(currentMultiplier);
-    }
-  }, 200);
+    const target = rounds[idx];
+    let step = (target-lastVal)/20;
+    let count = 0;
+    const smoothInterval = setInterval(()=>{
+      lastVal += step;
+      document.getElementById('multiplierDisplay').textContent = 'Multiplier: '+lastVal.toFixed(2)+'x';
+      count++;
+      if(count>=20){
+        clearInterval(smoothInterval);
+        lastVal = target;
+        idx++;
+      }
+    }, 50);
+  }, 1000);
 });
 
 // CASH OUT
 document.getElementById('cashOut').addEventListener('click', ()=>{
-  clearInterval(roundInterval);
-  const win = parseFloat((stakedAmount * currentMultiplier).toFixed(2));
-  const users = getUsers();
-  users[currentUser].balance += win;
-  saveUsers(users);
-  alert('Cashed out: '+win);
-  stakedAmount = 0;
-  currentMultiplier = 1;
-  document.getElementById('multiplier').textContent='1.00x';
-  document.getElementById('cashOut').style.display='none';
+  const users = JSON.parse(localStorage.getItem('aviator_users')||'{}');
+  const won = currentStake*currentMultiplier;
+  users[currentPlayer].balance += parseFloat(won.toFixed(2));
+  localStorage.setItem('aviator_users', JSON.stringify(users));
+  alert('Cashed out: $'+won.toFixed(2));
   updateBalance();
-  loadPastRounds();
+  stopRound();
 });
 
-// LOAD PAST MULTIPLIERS
-function loadPastRounds(lastMultiplier){
-  const ul = document.getElementById('pastRounds');
-  ul.innerHTML='';
-  const rounds = getRounds();
-  if(lastMultiplier) rounds.push(lastMultiplier);
-  rounds.forEach(r=>{
-    if(r){
-      const li = document.createElement('li');
-      li.textContent = r.toFixed(2)+'x';
-      ul.appendChild(li);
-    }
-  });
-  saveRounds(rounds);
+function stopRound(){
+  currentStake = 0;
+  currentMultiplier = 1;
+  document.getElementById('multiplierDisplay').textContent = 'Multiplier: 1.00x';
+  document.getElementById('cashOut').style.display='none';
+  if(multiplierInterval) clearInterval(multiplierInterval);
+  multiplierInterval = null;
 }
-
-// INITIALIZATION: autofill last user
-window.addEventListener('load', ()=>{
-  const users = getUsers();
-  const lastPhone = localStorage.getItem('aviator_last_user');
-  if(lastPhone && users[lastPhone]){
-    document.getElementById('phone').value = lastPhone;
-    document.getElementById('password').value = users[lastPhone].password;
-  }
-});
 </script>
 </body>
 </html>
